@@ -4,14 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.yigou</groupId>
-        <artifactId>common</artifactId>
-        <version>1.0.0</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.0.6</version>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <properties>
-        <!-- 此处配置的名称要和maven配置文件对应的serverId一致 -->
-        <github.global.server>github</github.global.server>
-    </properties>
+
 
     <groupId>com.yigou.common</groupId>
     <artifactId>reactivate-feign</artifactId>
@@ -36,102 +34,18 @@
 
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>github</id>
-            <name>pittzeng</name>
-            <!--
-            1. https://raw.github.com => 固定写法, 若编译的时候一直连接不上(Connection reset)，可将https改成http并反复重试，如果还是连接不上的话，大家都懂的，国外的网站嘛，多连接(编译)几次就可以了
-            2. AvengerEug => github登录的用户名
-            3. maven-repository => 存储发布的jar仓库
-            4. master => 从哪个分支中拿jar包
-            -->
-            <url>https://raw.github.com/pittzeng/yigou-reactivate-feign/main</url>
-        </repository>
-    </repositories>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-               <!-- <configuration>
+                <configuration>
                     <source>20</source>
                     <target>20</target>
                     <encoding>utf-8</encoding>
-                </configuration>-->
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <!-- 配置本地打包后的本地仓库存储地址，后续上传jar包会从此仓库中去取 -->
-                    <altDeploymentRepository>internal.repo::file://${project.build.directory}/maven-repository</altDeploymentRepository>
                 </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>com.github.github</groupId>
-                <artifactId>site-maven-plugin</artifactId>
-                <version>0.12</version>
-                <configuration>
-                    <message>Maven artifacts for ${project.artifactId}-${project.version}</message>
-                    <noJekyll>true</noJekyll>
-                    <!-- 指定从哪里去取打好的包，并上传至github -->
-                    <outputDirectory>${project.build.directory}/maven-repository</outputDirectory>
-                    <!--
-                        指定要上传的分支, refs/heads 这个不变，后面的分支名可选，可以采取一个jar包使用一个分支的策略。
-                        若多个jar包同时发布在同一个分支的话，会覆盖。。。。
-                    -->
-                    <branch>refs/heads/main</branch>
-                    <!-- 包含outputDirectory标签内填的文件夹中的所有内容 -->
-                    <includes>
-                        <include>**/*</include>
-                    </includes>
-                    <!-- github远程存储outputDirectory标签内填的文件夹中的内容 -->
-                    <repositoryName>reactivate-feign</repositoryName>
-                    <!--
-                      github的用户名，注意不是登录的用户名，此项需要登录后，进入https://github.com/settings/profile页面配置Name属性，
-                      否则会报
-                      [ERROR] Failed to execute goal com.github.github:site-maven-plugin:0.12:site
-                      (default) on project rfcore: Error creating commit: Invalid request.
-                      [ERROR] For 'properties/name', nil is not a string.
-                      [ERROR] For 'properties/name', nil is not a string. (422)
-                      [ERROR] -> [Help 1]
-                      的错误
-                    -->
-                    <repositoryOwner>pittzeng</repositoryOwner>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>site</goal>
-                        </goals>
-                        <phase>deploy</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
     </build>
 
