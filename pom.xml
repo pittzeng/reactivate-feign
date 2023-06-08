@@ -13,6 +13,7 @@
 
     <groupId>com.yigou.common</groupId>
     <artifactId>reactivate-feign</artifactId>
+    <version>1.0.0</version>
     <dependencies>
         <!--HttpMessageCode-Config 需要用这个依赖-->
         <dependency>
