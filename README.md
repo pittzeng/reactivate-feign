@@ -13,11 +13,14 @@ so: 如果大家有需要的话，我再添加功能。目前基本的调用服�
 ## 下面是如何使用：（PS：完全和OpenFeign一样）
 
 环境: spring-boot-starter-webflux spring-cloud-starter-loadbalancer
-#### dependency>
-#### groupId>com.yigou.common</groupId>
-#### artifactId>reactivate-feign</artifactId>
-#### version>1.0.0</version>
-#### /dependency>
+
+ #####
+         <dependency>
+             <groupId>com.yigou.common</groupId>
+             <artifactId>reactivate-feign</artifactId>
+              <version>1.0.0</version>
+          </dependency>
+  
 
 ## 1、在Application启动类上加上注解：
 ### @EnableFeignClient(basePackages = "com.xxx.")
@@ -27,36 +30,37 @@ so: 如果大家有需要的话，我再添加功能。目前基本的调用服�
 ## 2、在调用的接口类上添加服务提供端的注解： 
 ### @FeignClient(serviceName = "user-service")
 ## 例子：
-@FeignClient(serviceName = "user-service")
-public interface UserHandler {
-
-    @GetMapping(value = "/user/get")
-    public Flux<User> getUser(@RequestParam Integer id);
-    @PostMapping(value = "/user/save")
-    public Mono<User>save(@RequestBody User user);
-    @GetMapping(value = "/user/delete/{id}")
-    public Mono<Boolean>delete(@PathVariable Integer id);
-}
+###
+      @FeignClient(serviceName = "user-service")
+      public interface UserHandler {
+      
+          @GetMapping(value = "/user/get")
+          public Flux<User> getUser(@RequestParam Integer id);
+          @PostMapping(value = "/user/save")
+          public Mono<User>save(@RequestBody User user);
+          @GetMapping(value = "/user/delete/{id}")
+          public Mono<Boolean>delete(@PathVariable Integer id);
+      }
 ## 3、添加连接配置：application.yml
-
-spring:  
-  cloud:  
-    loadbalancer:   
-      enabled: true  #要找打不然可能无法找到负载均衡的服务  
- com:  
-  yigou:  
-    common:  
-      feign:  
-        enable: true   #开始Feign功能  
-        services:  #以下配置表示配置了两个服务的连接参数  
-          default:  
-            connection-time-out: 3000  
-            read-time-out: 5000  
-            max-in-memory-size: 5  
-            follow-redirects: false  
-          user-service:  #对应FeignClient注解中的（serviceName = "user-service"）  
-            connection-time-out: 3000 #http请求连接超时  
-            read-time-out: 5000 #读取服务提供者数据超时  
-            max-in-memory-size: 5 #读取提供者最大内存大小，以M为单位  
-            follow-redirects: false #目前重试和跳转功能还没有做配了也没用  
-
+####
+    spring:  
+      cloud:  
+        loadbalancer:   
+          enabled: true  #要找打不然可能无法找到负载均衡的服务  
+     com:  
+      yigou:  
+        common:  
+          feign:  
+            enable: true   #开始Feign功能  
+            services:  #以下配置表示配置了两个服务的连接参数  
+              default:  
+                connection-time-out: 3000  
+                read-time-out: 5000  
+                max-in-memory-size: 5  
+                follow-redirects: false  
+              user-service:  #对应FeignClient注解中的（serviceName = "user-service"）  
+                connection-time-out: 3000 #http请求连接超时  
+                read-time-out: 5000 #读取服务提供者数据超时  
+                max-in-memory-size: 5 #读取提供者最大内存大小，以M为单位  
+                follow-redirects: false #目前重试和跳转功能还没有做配了也没用  
+    
