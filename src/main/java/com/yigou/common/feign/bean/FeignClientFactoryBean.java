@@ -1,7 +1,6 @@
 package com.yigou.common.feign.bean;
 
-import com.yigou.common.feign.codes.CustomJsonDecoder;
-import com.yigou.common.feign.codes.CustomJsonEncoder;
+import com.yigou.common.feign.codes.HttpMessageConfiguration;
 import com.yigou.common.feign.config.ConnectionProperties;
 import com.yigou.common.feign.config.FeignClientProperties;
 import com.yigou.common.feign.handler.RestHandler;
@@ -16,6 +15,8 @@ import io.netty.handler.timeout.WriteTimeoutHandler;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
@@ -23,6 +24,7 @@ import org.springframework.cglib.proxy.MethodProxy;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -48,12 +50,14 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationContextAware {
+public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationContextAware, BeanFactoryAware {
 
 
     private Class<?> type;
     private String baseUrl;
     private ApplicationContext parentApplicationContext;
+    private GenericApplicationContext applicationContext;
+    private BeanFactory beanFactory;
 
     private FeignClientContext feignClientContext;
 
@@ -91,7 +95,11 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
 
     Object getFeignObject() {
         feignClientContext = parentApplicationContext.getBean(FeignClientContext.class);
-        webclientBuilder = createBuilder();
+        FeignClientProperties feignClientProperties = parentApplicationContext.getBean(FeignClientProperties.class);
+        applicationContext = feignClientContext.buildContext(this.baseUrl);
+        applicationContext.setParent(parentApplicationContext);
+
+        webclientBuilder = createBuilder(feignClientProperties);
         return Enhancer.create(type, new MethodInterceptor() {
             @Override
             public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
@@ -142,24 +150,10 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
         return null;
     }
 
-    private WebClient.Builder createBuilder() {
-        FeignClientProperties feignClientProperties = parentApplicationContext.getBean(FeignClientProperties.class);
+    private WebClient.Builder createBuilder( FeignClientProperties feignClientProperties ) {
+
         ConnectionProperties connectionProperties = feignClientProperties.getServices().get(this.baseUrl);
-           /* HttpClient httpClient = feignClientContext.getInstance(this.baseUrl, HttpClient.class);
-            httpClient.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectionProperties.getConnectionTimeOut());
-            httpClient.doOnConnected(connection -> {
-                connection.addHandlerLast(new ReadTimeoutHandler(connectionProperties.getReadTimeOut(), TimeUnit.MILLISECONDS));
-                connection.addHandlerLast(new WriteTimeoutHandler(connectionProperties.getReadTimeOut(), TimeUnit.MILLISECONDS));
-            });
-             ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-            WebClient.Builder builder = feignClientContext.getInstance(this.baseUrl, WebClient.Builder.class);
-            return builder.clientConnector(connector)
-                    .exchangeStrategies(ExchangeStrategies.builder()
-                            .codecs(clientCodecConfigurer -> {
-                                clientCodecConfigurer.defaultCodecs().maxInMemorySize((connectionProperties.getMaxInMemorySize() * 1024 * 1024));
-                            })
-                            .build());
-            */
+
         HttpClient httpClient = HttpClient.create()
                 .resolver(DefaultAddressResolverGroup.INSTANCE)
                 .responseTimeout(Duration.ofMillis(connectionProperties.getReadTimeOut()))
@@ -173,16 +167,16 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
         httpClient = httpClient.secure(sslContextSpec -> sslContextSpec.sslContext(getTrustAllSslWebClient()));
 
 
-        CustomJsonDecoder customJsonDecoder = feignClientContext.getInstance(this.baseUrl, CustomJsonDecoder.class);
-        CustomJsonEncoder customJsonEncoder = feignClientContext.getInstance(this.baseUrl, CustomJsonEncoder.class);
+        HttpMessageConfiguration httpMessageConfiguration = feignClientContext.getInstance(this.baseUrl, HttpMessageConfiguration.class);
+
         ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
         return WebClient.builder()
                 .clientConnector(connector)
                 .exchangeStrategies(ExchangeStrategies.builder()
                         .codecs(configurer -> {
                                     configurer.defaultCodecs().maxInMemorySize((connectionProperties.getMaxInMemorySize() * 1024 * 1024));
-                                    configurer.defaultCodecs().jackson2JsonDecoder(customJsonDecoder);
-                                    configurer.defaultCodecs().jackson2JsonEncoder(customJsonEncoder);
+                                    configurer.defaultCodecs().jackson2JsonDecoder(httpMessageConfiguration.getCustomJsonDecoder());
+                                    configurer.defaultCodecs().jackson2JsonEncoder(httpMessageConfiguration.getCustomJsonEncoder());
 
                                     //configurer.customCodecs().register(new Jackson2CborDecoder());
                                     //configurer.customCodecs().register(new Jackson2CborEncoder());
@@ -192,6 +186,8 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
                 );
     }
 
+    private Method method;
+
     /**
      * 将方法中的注解信息，读取出来，路径参数，body 和返回值类型
      *
@@ -200,7 +196,8 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
      * @return
      * @throws NoSuchMethodException
      */
-    protected RequestParamInfo extractMethodInfo(Method method, Object[] args) throws NoSuchMethodException {
+    protected RequestParamInfo extractMethodInfo(Method method, Object[] args) throws NoSuchMethodException, ClassNotFoundException {
+        this.method = method;
         RequestParamInfo requestParamInfo = new RequestParamInfo();
         Annotation[] annotations = method.getAnnotations();
         for (Annotation annotation : annotations) {
@@ -240,15 +237,21 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
         boolean assignableFrom = method.getReturnType().isAssignableFrom(Flux.class);
         requestParamInfo.setReturnFlux(assignableFrom);
         Type[] actualTypeArguments = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments();
-
         Optional<Type> optionalType = Arrays.stream(actualTypeArguments).findFirst();
         if (optionalType.isPresent()) {
-            requestParamInfo.setResultBody(optionalType.get());
+            if (optionalType.get() instanceof ParameterizedType parameterizedType) {
+                Type rawType = parameterizedType.getRawType();
+                Type newType = new MyParameterizedTypeImpl(rawType, parameterizedType.getActualTypeArguments(), null);
+                requestParamInfo.setResultBody(newType);
+            } else {
+                requestParamInfo.setResultBody(optionalType.get());
+            }
         } else {
-            requestParamInfo.setResultBody(new Object());
+            requestParamInfo.setResultBody(Object.class);
         }
         return requestParamInfo;
     }
+
 
     public Class<?> getType() {
         return type;
@@ -272,6 +275,7 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
 
     public void setParentApplicationContext(ApplicationContext parentApplicationContext) {
         this.parentApplicationContext = parentApplicationContext;
+        this.beanFactory = parentApplicationContext;
     }
 
     public FeignClientContext getFeignClientContext() {
@@ -288,5 +292,10 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, ApplicationC
 
     public void setRestHandler(RestHandler restHandler) {
         this.restHandler = restHandler;
+    }
+
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
     }
 }

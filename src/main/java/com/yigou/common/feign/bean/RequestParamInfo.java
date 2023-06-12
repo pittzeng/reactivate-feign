@@ -3,6 +3,8 @@ package com.yigou.common.feign.bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.MultiValueMap;
 
+import java.lang.reflect.Type;
+
 public class RequestParamInfo {
     public String getUrl() {
         return url;
@@ -18,7 +20,7 @@ public class RequestParamInfo {
     private MultiValueMap<String,String> requestParam;
     private Object requestBody;
     private boolean isReturnFlux;
-    private Object resultBody;
+    private Type resultBody;
 
     public String getRequestPath() {
         return requestPath;
@@ -60,11 +62,11 @@ public class RequestParamInfo {
         isReturnFlux = returnFlux;
     }
 
-    public  Object getResultBody() {
+    public Type getResultBody() {
         return resultBody;
     }
 
-    public void setResultBody(Object resultBody) {
+    public void setResultBody(Type resultBody) {
         this.resultBody = resultBody;
     }
 }

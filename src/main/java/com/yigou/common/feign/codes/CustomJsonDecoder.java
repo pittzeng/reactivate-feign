@@ -6,15 +6,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpInputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.json.AbstractJackson2Decoder;
-import org.springframework.lang.NonNull;
 import org.springframework.util.MimeType;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.SimpleTimeZone;
@@ -41,7 +36,7 @@ public class CustomJsonDecoder extends AbstractJackson2Decoder {
             .setTimeZone(SimpleTimeZone.getTimeZone("GMT+8"));
 
     public CustomJsonDecoder() {
-        super(objectMapper, MediaType.APPLICATION_JSON);
+        super(objectMapper, MediaType.APPLICATION_JSON,MediaType.APPLICATION_OCTET_STREAM);
     }
 
 
@@ -73,7 +68,7 @@ public class CustomJsonDecoder extends AbstractJackson2Decoder {
         return read;*/
     }
 
-
+/*
     public static class CustomHttpInputMessage implements HttpInputMessage {
         private final InputStream inputStream;
 
@@ -94,5 +89,5 @@ public class CustomJsonDecoder extends AbstractJackson2Decoder {
             httpHeaders.set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
             return httpHeaders;
         }
-    }
+    }*/
 }

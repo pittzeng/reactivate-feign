@@ -31,7 +31,11 @@ public class HttpMessageConfiguration implements WebFluxConfigurer {
         configurer.defaultCodecs().jackson2JsonDecoder(customJsonDecoder);
     }
 
+    public CustomJsonDecoder getCustomJsonDecoder() {
+        return customJsonDecoder;
+    }
 
-
-
+    public CustomJsonEncoder getCustomJsonEncoder() {
+        return customJsonEncoder;
+    }
 }

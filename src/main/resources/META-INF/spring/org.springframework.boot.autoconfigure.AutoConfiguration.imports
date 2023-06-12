@@ -1,3 +1,2 @@
-
 com.yigou.common.feign.loadbalancer.FeignLoadBalancerAutoConfiguration
 com.yigou.common.feign.config.ReactivateFeignAutoConfiguration

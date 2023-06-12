@@ -39,7 +39,7 @@ public class CustomJsonEncoder extends AbstractJackson2Encoder {
             // 设置 Jackson 使用的时区
             .setTimeZone(SimpleTimeZone.getTimeZone("GMT+8"));
     public CustomJsonEncoder() {
-        super(objectMapper, MediaType.APPLICATION_JSON);
+        super(objectMapper, MediaType.APPLICATION_JSON,MediaType.APPLICATION_OCTET_STREAM);
     }
 
     @Override

@@ -31,17 +31,16 @@ public class WebClientHandler implements RestHandler {
 
     public WebClientHandler(WebClient.Builder builder, String baseUrl) {
         this.webClientBuilder = builder;
-        this.baseUrl=baseUrl;
+        this.baseUrl = baseUrl;
     }
 
 
     public WebClient getWebClientByBaseUrl() {
-        String url =this.baseUrl;
+        String url = this.baseUrl;
         if (StringUtils.hasLength(this.baseUrl) && !baseUrl.startsWith("http")) {
             url = "http://" + this.baseUrl;
         }
         return webClientBuilder
-                //.filter(loadBalancedExchangeFilterFunction)
                 .baseUrl(url)
                 .build();
     }
@@ -54,19 +53,36 @@ public class WebClientHandler implements RestHandler {
                         .path(requestParamInfo.getRequestPath())
                         .queryParams(requestParamInfo.getRequestParam())
                         .build());
-        WebClient.ResponseSpec retrieve;
-
+        WebClient.RequestHeadersSpec<?> requestHeadersSpec;
         if (requestParamInfo.getRequestBody() == null || requestParamInfo.getRequestBody().equals(Void.class)) {
-            retrieve = uri.accept(MediaType.ALL).retrieve();
+            requestHeadersSpec = uri
+                    .accept(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.ALL);
+            /*if (requestParamInfo.isReturnFlux()) {
+                return uri.accept(MediaType.ALL).exchangeToFlux(clientResponse -> {
+                    return clientResponse.bodyToFlux(requestParamInfo.getRequestBody().getClass());
+                });
+            } else {
+                return uri.accept(MediaType.ALL).exchangeToMono(clientResponse -> {
+                    return clientResponse.bodyToMono(requestParamInfo.getRequestBody().getClass());
+                });
+            }*/
         } else {
-            retrieve = uri.body(BodyInserters.fromValue(requestParamInfo.getRequestBody()))
-                    .accept(MediaType.ALL)
-                    .retrieve();
+            requestHeadersSpec = uri.body(BodyInserters.fromValue(requestParamInfo.getRequestBody()))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.ALL);
         }
+        //Mono<ClientResponse> exchange = requestHeadersSpec.exchange();
         if (requestParamInfo.isReturnFlux()) {
-            return retrieve.bodyToFlux(String.class);
+            return requestHeadersSpec.exchangeToFlux(clientResponse -> {
+                return clientResponse.bodyToFlux(ParameterizedTypeReference.forType(requestParamInfo.getResultBody()));
+            });
+        } else {
+            return requestHeadersSpec.exchangeToMono(clientResponse -> {
+                var objectParameterizedTypeReference = ParameterizedTypeReference.forType(requestParamInfo.getResultBody());
+                return clientResponse.bodyToMono(objectParameterizedTypeReference);
+            });
         }
-        return retrieve.bodyToMono(requestParamInfo.getResultBody().getClass());
     }
 
 

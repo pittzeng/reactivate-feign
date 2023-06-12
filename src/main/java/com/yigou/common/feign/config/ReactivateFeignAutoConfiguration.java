@@ -46,7 +46,7 @@ public class ReactivateFeignAutoConfiguration {
         return new ConnectionProperties();
     }
 
-    @Bean
+   @Bean
     public CustomJsonDecoder customJsonDecoder(){
         return new CustomJsonDecoder();
     }

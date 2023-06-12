@@ -24,7 +24,7 @@ public class ClassPathScanner {
         this.environment=environment;
         this.resourceLoader=resourceLoader;
     }
-    private ClassPathScanningCandidateComponentProvider classPathScanner(Class<? extends Annotation> annotation){
+    public ClassPathScanningCandidateComponentProvider getClassPathScanner(Class<? extends Annotation> annotation){
         ClassPathScanningCandidateComponentProvider classPathScanningCandidateComponentProvider = new ClassPathScanningCandidateComponentProvider(false, environment) {
             protected boolean isCandidateComponent(@NonNull AnnotatedBeanDefinition beanDefinition) {
                 boolean isCandidate = false;
@@ -51,6 +51,7 @@ public class ClassPathScanner {
     public Set<String> getBasePackageByAnnotation(AnnotationMetadata metadata,Class<? extends Annotation> annotation) {
        return this.getBasePackages(metadata,annotation);
     }
+
 
     protected Set<String> getBasePackages(AnnotationMetadata importingClassMetadata,Class<? extends Annotation> annotation) {
         Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes(annotation.getCanonicalName());
@@ -83,7 +84,8 @@ public class ClassPathScanner {
      * @return
      */
     public Set<BeanDefinition> getAllBeanDefinitionByPackagePath(String packagePath,Class<? extends Annotation> annotation){
-        return classPathScanner(annotation).findCandidateComponents(packagePath);
+
+        return getClassPathScanner(annotation).findCandidateComponents(packagePath);
     }
 
 

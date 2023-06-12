@@ -53,6 +53,7 @@ public class ImportFeignBeanDefinitionRegister implements ImportBeanDefinitionRe
 
     public void registerFeignClients(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
         LinkedHashSet<BeanDefinition> candidateComponents = new LinkedHashSet<>();
+
         ClassPathScanner classPathScanner = new ClassPathScanner(this.environment, this.resourceLoader);
         for (String basePackage : classPathScanner.getBasePackageByAnnotation(metadata, EnableFeignClient.class)) {
             candidateComponents.addAll(classPathScanner.getAllBeanDefinitionByPackagePath(basePackage, FeignClient.class));
