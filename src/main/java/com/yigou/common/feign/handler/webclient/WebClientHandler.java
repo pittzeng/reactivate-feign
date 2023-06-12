@@ -56,23 +56,11 @@ public class WebClientHandler implements RestHandler {
         WebClient.RequestHeadersSpec<?> requestHeadersSpec;
         if (requestParamInfo.getRequestBody() == null || requestParamInfo.getRequestBody().equals(Void.class)) {
             requestHeadersSpec = uri
-                    .accept(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.ALL);
-            /*if (requestParamInfo.isReturnFlux()) {
-                return uri.accept(MediaType.ALL).exchangeToFlux(clientResponse -> {
-                    return clientResponse.bodyToFlux(requestParamInfo.getRequestBody().getClass());
-                });
-            } else {
-                return uri.accept(MediaType.ALL).exchangeToMono(clientResponse -> {
-                    return clientResponse.bodyToMono(requestParamInfo.getRequestBody().getClass());
-                });
-            }*/
+                    .accept(MediaType.APPLICATION_JSON);
         } else {
             requestHeadersSpec = uri.body(BodyInserters.fromValue(requestParamInfo.getRequestBody()))
-                    .accept(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.ALL);
+                    .accept(MediaType.APPLICATION_JSON);
         }
-        //Mono<ClientResponse> exchange = requestHeadersSpec.exchange();
         if (requestParamInfo.isReturnFlux()) {
             return requestHeadersSpec.exchangeToFlux(clientResponse -> {
                 return clientResponse.bodyToFlux(ParameterizedTypeReference.forType(requestParamInfo.getResultBody()));
@@ -144,30 +132,6 @@ public class WebClientHandler implements RestHandler {
                 .retrieve();
     }
 
-    /* public WebClient.ResponseSpec PostResponseSpec(String path, Map<String, String> requestParam, Object body) {
-         URL url = parseUrl(path);
-         if (null == body) {
-             return webClient()
-                     .post()
-                     .uri(uriBuilder -> uriBuilder
-                             .scheme(url.getProtocol())
-                             .host(url.getHost())
-                             .port(url.getPort())
-                             .path(url.getPath())
-                             .queryParams(getRequestParamMap(requestParam)).build())
-                     .retrieve();
-         }
-         return webClient()
-                 .post()
-                 .uri(uriBuilder -> uriBuilder
-                         .scheme(url.getProtocol())
-                         .host(url.getHost())
-                         .port(url.getPort())
-                         .path(url.getPath())
-                         .queryParams(getRequestParamMap(requestParam)).build())
-                 .body(BodyInserters.fromValue(body))
-                 .retrieve();
-     }*/
     public WebClient.ResponseSpec GetResponseSpec(String path, Map<String, String> requestParam) {
         return getWebClientByBaseUrl()
                 .get()
@@ -176,20 +140,6 @@ public class WebClientHandler implements RestHandler {
                         .queryParams(getRequestParamMap(requestParam)).build())
                 .retrieve();
     }
-
-   /* public WebClient.ResponseSpec GetResponseSpec(String path, Map<String, String> requestParam) {
-        URL url = parseUrl(path);
-        return webClient()
-                .get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme(url.getProtocol())
-                        .host(url.getHost())
-                        .port(url.getPort())
-                        .path(url.getPath())
-                        .queryParams(getRequestParamMap(requestParam)).build())
-                .retrieve();
-    }*/
-
 
     private MultiValueMap<String, String> getRequestParamMap(Map<String, String> params) {
         MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
@@ -266,21 +216,5 @@ public class WebClientHandler implements RestHandler {
         this.webClientBuilder = webClientBuilder;
     }
 
-    /* public WebClient.Builder getWebClientBuilder() {
-        return webClientBuilder;
-    }
 
-    public void setWebClientBuilder(WebClient.Builder webClientBuilder) {
-        this.webClientBuilder = webClientBuilder;
-    }
-*/
-   /* public static void main(String[] args) {
-        String urlStr="https://blog.csdn.net/qq_43566496/article/details/84938575";
-        try{
-            val url = new URL(urlStr);
-            LogUtils.info(url.getProtocol());
-        }catch (Exception ex){
-
-        }
-    }*/
 }
